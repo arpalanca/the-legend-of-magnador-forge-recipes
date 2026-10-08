@@ -1,0 +1,547 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>:root{color-scheme:light}body{margin:0}[hidden]{display:none!important}img{max-width:100%}</style>
+<title>Magnador Forge Recipes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Marcellus+SC&family=Alegreya+Sans:ital,wght@0,400;0,500;0,700;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one workbench column. Seed finder on top, filters, then a recipe ledger grouped by equipment type. */
+:root {
+  --bg: #e8ebef;
+  --surface: #f6f7f9;
+  --surface-2: #dde2e8;
+  --ink: #1a2028;
+  --muted: #586271;
+  --line: #c6cdd6;
+  --gold: #8a5a00;
+  --gold-fill: #f2dc9c;
+  --gold-ink: #3b2700;
+  --ok: #1d7446;
+  --ok-bg: #d5eddf;
+  --warn: #874800;
+  --warn-bg: #f6e2c2;
+  --focus: #2f6fd6;
+
+  --f-display: "Marcellus SC", "Palatino Linotype", Palatino, Georgia, serif;
+  --f-body: "Alegreya Sans", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+
+  --step--1: 0.8125rem;
+  --step-0: 1rem;
+  --step-1: 1.1875rem;
+  --step-2: 1.5rem;
+  --step-3: clamp(1.9rem, 1.4rem + 2vw, 2.75rem);
+  --radius: 6px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #11151a; --surface: #191e25; --surface-2: #232a33; --ink: #e3e7ec; --muted: #97a2ae; --line: #2d3540;
+    --gold: #ffcc00; --gold-fill: #3b300b; --gold-ink: #ffe27d;
+    --ok: #63d394; --ok-bg: #12301f; --warn: #ffb860; --warn-bg: #3a2810; --focus: #7fb0ff;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #11151a; --surface: #191e25; --surface-2: #232a33; --ink: #e3e7ec; --muted: #97a2ae; --line: #2d3540;
+  --gold: #ffcc00; --gold-fill: #3b300b; --gold-ink: #ffe27d;
+  --ok: #63d394; --ok-bg: #12301f; --warn: #ffb860; --warn-bg: #3a2810; --focus: #7fb0ff;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--f-body);
+  font-size: var(--step-0);
+  line-height: 1.5;
+  padding-inline: 16px;
+  padding-block: 0 3rem;
+}
+.wrap { max-width: 72rem; margin-inline: auto; display: grid; gap: 2rem; }
+h1, h2, h3 { font-family: var(--f-display); font-weight: 400; text-wrap: balance; margin: 0; letter-spacing: 0.02em; }
+p { margin: 0; }
+code, .code { font-family: var(--f-mono); font-size: 0.78em; color: var(--muted); }
+button, select, input { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.label { font-size: var(--step--1); text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 500; }
+
+/* Header */
+header.top { padding-block: 2.25rem 0; display: grid; gap: 0.75rem; }
+header.top .label { color: var(--gold); }
+header.top h1 { font-size: var(--step-3); line-height: 1.1; }
+header.top .lead { max-width: 62ch; color: var(--muted); font-size: var(--step-1); }
+
+/* Bench: seed finder + how-to */
+.bench { display: grid; grid-template-columns: minmax(0, 1.65fr) minmax(0, 1fr); gap: 1.25rem; align-items: start; }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 1.25rem; display: grid; gap: 1.1rem; min-width: 0; }
+.seed-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 0.5rem 1rem; }
+.seed-now { display: flex; align-items: baseline; gap: 0.75rem; flex-wrap: wrap; }
+.seed-now h2 { font-size: var(--step-2); }
+.seed-now .big { font-family: var(--f-display); font-size: 2.25rem; line-height: 1; color: var(--gold); min-width: 1.2ch; }
+.pill { display: inline-flex; align-items: center; gap: 0.35em; font-size: var(--step--1); font-weight: 500; padding: 0.1rem 0.55rem; border-radius: 999px; white-space: nowrap; }
+.pill.ok { background: var(--ok-bg); color: var(--ok); }
+.pill.warn { background: var(--warn-bg); color: var(--warn); }
+.pill.muted { background: var(--surface-2); color: var(--muted); }
+.seed-source { color: var(--muted); font-size: var(--step--1); }
+
+.seeds { display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); gap: 0.35rem; }
+.seeds button {
+  font-family: var(--f-display); font-size: var(--step-1);
+  padding-block: 0.4rem; border: 1px solid var(--line); background: var(--bg); border-radius: 4px; cursor: pointer;
+  font-variant-numeric: tabular-nums;
+}
+.seeds button:hover { border-color: var(--gold); }
+.seeds button[aria-pressed="true"] { background: var(--gold-fill); border-color: var(--gold); color: var(--gold-ink); }
+
+.finders { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+.finder { display: grid; gap: 0.6rem; align-content: start; padding-top: 1rem; border-top: 1px solid var(--line); min-width: 0; }
+.finder h3 { font-size: var(--step-1); }
+.finder p.hint { color: var(--muted); font-size: 0.9375rem; }
+.field { display: grid; gap: 0.25rem; }
+.field label { font-size: var(--step--1); color: var(--muted); }
+select, input[type="search"] {
+  width: 100%; min-width: 0; padding: 0.45rem 0.55rem; border: 1px solid var(--line); border-radius: 4px; background: var(--bg);
+}
+.answer { font-size: 0.9375rem; min-height: 1.5em; }
+.answer strong { color: var(--gold); font-weight: 700; }
+.answer.bad { color: var(--warn); }
+.answer .pick { display: inline-flex; gap: 0.4rem; margin-left: 0.25rem; flex-wrap: wrap; }
+.btn {
+  padding: 0.35rem 0.8rem; border: 1px solid var(--line); background: var(--bg); border-radius: 4px; cursor: pointer; font-weight: 500;
+}
+.btn:hover { border-color: var(--gold); }
+.btn.danger[data-armed="true"] { background: var(--warn-bg); color: var(--warn); border-color: var(--warn); }
+
+.howto { display: grid; gap: 1rem; }
+.howto h2 { font-size: var(--step-1); }
+.howto ol { margin: 0; padding-left: 1.35rem; display: grid; gap: 0.55rem; }
+.howto li::marker { font-family: var(--f-display); color: var(--gold); }
+.howto .aside { font-size: 0.9375rem; color: var(--muted); border-top: 1px solid var(--line); padding-top: 0.9rem; display: grid; gap: 0.5rem; }
+.howto .aside b { color: var(--ink); font-weight: 500; }
+
+/* Filters */
+.filters { display: grid; gap: 0.9rem; }
+.row-wrap { display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center; }
+.tab {
+  padding: 0.3rem 0.8rem; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); cursor: pointer;
+}
+.tab[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.filters .search { flex: 1 1 14rem; max-width: 22rem; margin-left: auto; }
+.have { display: grid; gap: 0.45rem; }
+.chip-btn {
+  padding: 0.25rem 0.7rem; border-radius: 4px; border: 1px dashed var(--line); background: transparent; cursor: pointer; font-size: 0.9375rem;
+}
+.chip-btn[aria-pressed="true"] { border-style: solid; border-color: var(--gold); background: var(--gold-fill); color: var(--gold-ink); }
+.toggles { display: flex; flex-wrap: wrap; gap: 0.5rem 1.25rem; font-size: 0.9375rem; }
+.toggles label { display: inline-flex; gap: 0.4rem; align-items: center; cursor: pointer; }
+.toggles label[aria-disabled="true"] { color: var(--muted); cursor: not-allowed; }
+.summary { color: var(--muted); font-size: var(--step--1); font-variant-numeric: tabular-nums; }
+
+/* Ledger */
+.ledger { display: grid; gap: 2rem; }
+.cat { display: grid; gap: 0.5rem; }
+.cat-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.25rem 1rem; padding-bottom: 0.4rem; border-bottom: 2px solid var(--ink); }
+.cat-head h2 { font-size: var(--step-2); }
+.cat-head .meta { color: var(--muted); font-size: 0.9375rem; font-variant-numeric: tabular-nums; }
+.cat-head .meta b { color: var(--ink); font-weight: 500; }
+ul.recipes { list-style: none; margin: 0; padding: 0; }
+.recipe {
+  display: grid;
+  grid-template-columns: 1.75rem minmax(9rem, 1fr) minmax(15rem, 1.5fr) minmax(0, 2fr);
+  grid-template-areas: "chk item mix fx" ". note note note";
+  gap: 0.3rem 1rem; align-items: start;
+  padding-block: 0.75rem; border-bottom: 1px solid var(--line);
+}
+.recipe .chk { grid-area: chk; padding-top: 0.15rem; }
+.recipe .chk input { width: 1.05rem; height: 1.05rem; accent-color: var(--gold); cursor: pointer; }
+.recipe .item { grid-area: item; display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.15rem 0.5rem; min-width: 0; }
+.recipe .item .name { font-weight: 700; }
+.recipe .mix { grid-area: mix; display: flex; flex-wrap: wrap; align-items: center; gap: 0.3rem; min-width: 0; }
+.recipe .fx { grid-area: fx; color: var(--muted); font-size: 0.9375rem; min-width: 0; }
+.recipe .note { grid-area: note; font-size: var(--step--1); color: var(--warn); }
+.recipe.is-forged .item .name { text-decoration: line-through; text-decoration-color: var(--muted); }
+.recipe.is-forged .item .name, .recipe.is-forged .mix, .recipe.is-forged .fx { opacity: 0.55; }
+.ing {
+  font-size: 0.9375rem; padding: 0.08rem 0.5rem; border-radius: 4px; border: 1px solid var(--line); background: var(--surface); white-space: nowrap;
+}
+.ing.base { background: var(--surface-2); border-color: transparent; color: var(--muted); }
+.ing.owned { border-color: var(--gold); background: var(--gold-fill); color: var(--gold-ink); }
+.ing.unknown { color: var(--muted); border-style: dashed; min-width: 2.2rem; text-align: center; }
+.plus { color: var(--muted); font-size: var(--step--1); }
+.empty { padding: 1.5rem; text-align: center; color: var(--muted); border: 1px dashed var(--line); border-radius: var(--radius); }
+
+footer { color: var(--muted); font-size: var(--step--1); max-width: 70ch; display: grid; gap: 0.4rem; }
+
+@media (max-width: 920px) {
+  .bench { grid-template-columns: minmax(0, 1fr); }
+  .recipe {
+    grid-template-columns: 1.75rem minmax(0, 1fr);
+    grid-template-areas: "chk item" ". mix" ". fx" ". note";
+  }
+}
+@media (max-width: 640px) {
+  .finders { grid-template-columns: minmax(0, 1fr); }
+  .seeds { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+  .filters .search { max-width: none; margin-left: 0; flex-basis: 100%; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .seeds button, .chip-btn, .tab, .btn { transition: background-color 120ms, border-color 120ms; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <span class="label">Finn's Magnador 2.0 FINAL · Mini-Forge</span>
+    <h1>Magnador Forge Recipes</h1>
+    <p class="lead">Every new game picks one of 10 seeds that changes which ingredients each recipe needs. That's why fixed recipe lists online don't match your game. Set this game's seed once and every recipe below shows the right ingredients.</p>
+  </header>
+
+  <section class="bench" aria-label="Find your seed">
+    <div class="panel">
+      <div class="seed-head">
+        <div class="seed-now">
+          <h2>This game's seed</h2>
+          <span class="big" id="seed-big">–</span>
+          <span id="seed-pill" class="pill warn">Not set</span>
+        </div>
+        <button class="btn danger" id="reset" type="button">Start a new game</button>
+      </div>
+      <p class="seed-source" id="seed-source">Pick it below if you know it, or work it out from a Cookbook or an item you've already forged.</p>
+      <div class="seeds" role="group" aria-label="Seed" id="seeds"></div>
+
+      <div class="finders">
+        <div class="finder">
+          <h3>From a Cookbook</h3>
+          <p class="hint">Use the Cookbook and pick the page it shows, then the first ingredient it lists.</p>
+          <div class="field">
+            <label for="cb-page">Page</label>
+            <select id="cb-page"></select>
+          </div>
+          <div class="field">
+            <label for="cb-first">First ingredient listed</label>
+            <select id="cb-first"></select>
+          </div>
+          <p class="answer" id="cb-answer" aria-live="polite"></p>
+        </div>
+        <div class="finder">
+          <h3>From an item you forged</h3>
+          <p class="hint">Pick something you already forged this game and the two ingredients you used.</p>
+          <div class="field">
+            <label for="fi-item">Forged item</label>
+            <select id="fi-item"></select>
+          </div>
+          <div class="field">
+            <label for="fi-a">Ingredient 1</label>
+            <select id="fi-a"></select>
+          </div>
+          <div class="field">
+            <label for="fi-b">Ingredient 2</label>
+            <select id="fi-b"></select>
+          </div>
+          <p class="answer" id="fi-answer" aria-live="polite"></p>
+        </div>
+      </div>
+    </div>
+
+    <aside class="panel howto">
+      <h2>How forging works</h2>
+      <ol>
+        <li>Learn forging from <b>Rondolf</b>. Until then the Mini-Forge drops what you give it and says “Forging not learned yet.”</li>
+        <li>Buy an unprocessed base from the <b>Blacksmith</b>: Helmet, Weapon, Shield, Staff, Gloves or Armor.</li>
+        <li>Collect the two ingredients. They drop at random from monsters.</li>
+        <li>Give the base and both ingredients to the <b>Mini-Forge</b>. It forges as soon as it holds a matching set of three.</li>
+      </ol>
+      <div class="aside">
+        <p><b>Each recipe works once per game.</b> Tick items off below as you forge them.</p>
+        <p><b>Cookbooks</b> are sold by Zardox: <i>Wooden Dreams</i> (1000 gold) and <i>Blood Bowl</i> (1500 gold). Each use turns to the next of 3 pages.</p>
+      </div>
+    </aside>
+  </section>
+
+  <section class="filters" aria-label="Filter recipes">
+    <div class="row-wrap" id="tabs" role="group" aria-label="Equipment type"></div>
+    <div class="have">
+      <span class="label">Ingredients you have</span>
+      <div class="row-wrap" id="have"></div>
+    </div>
+    <div class="row-wrap">
+      <div class="toggles">
+        <label id="ready-label"><input type="checkbox" id="only-ready"> Only what I can make now</label>
+        <label><input type="checkbox" id="hide-forged"> Hide forged</label>
+      </div>
+      <input type="search" id="q" class="search" placeholder="Search items, effects, ingredients" aria-label="Search recipes">
+    </div>
+    <p class="summary" id="summary" aria-live="polite"></p>
+  </section>
+
+  <section class="ledger" id="ledger" aria-label="Recipes"></section>
+
+  <footer>
+    <p><i>The Legend of Magnador</i> was created by Hamster_Man and BlueEagle. All game content belongs to them. Warcraft III is a trademark of Blizzard Entertainment. This is an unofficial fan guide.</p>
+    <p>Read directly from the map script of <i>Finn's Magnador 2.0 FINAL.w3x</i>. The grey codes next to item names are the map's internal item IDs.</p>
+    <p>One map bug: Hands of Frost and Searing Gloves use the same ingredients. The first time you forge that combination you get Hands of Frost. The second time you get Searing Gloves.</p>
+  </footer>
+</div>
+
+<script>
+const D = {"ingredients":[{"code":"I027","name":"Voodoo Doll"},{"code":"I025","name":"Talons"},{"code":"I01D","name":"Silvershine Herbs"},{"code":"I024","name":"Bat Wing"},{"code":"I029","name":"Demon Blood"},{"code":"I02A","name":"Bones"},{"code":"I028","name":"Runestone"},{"code":"I02B","name":"Magic Scroll"},{"code":"I026","name":"Glowing Leaf"},{"code":"I023","name":"Stardust"}],"seeds":[["I027","I025","I01D","I024","I029","I02A","I028","I02B","I026","I023"],["I025","I01D","I024","I029","I02A","I028","I02B","I026","I023","I027"],["I01D","I024","I029","I02A","I028","I02B","I026","I023","I027","I025"],["I024","I029","I02A","I028","I02B","I026","I023","I027","I025","I01D"],["I029","I02A","I028","I02B","I026","I023","I027","I025","I01D","I024"],["I02A","I028","I02B","I026","I023","I027","I025","I01D","I024","I029"],["I028","I02B","I026","I023","I027","I025","I01D","I024","I029","I02A"],["I02B","I026","I023","I027","I025","I01D","I024","I029","I02A","I028"],["I026","I023","I027","I025","I01D","I024","I029","I02A","I028","I02B"],["I023","I027","I025","I01D","I024","I029","I02A","I028","I02B","I026"]],"categories":[{"id":"helmets","name":"Helmets","base":{"code":"I00H","name":"Unprocessed Helmet"},"recipes":[{"code":"I01X","name":"Bone Helm","slots":[1,2],"effect":"Increases the armor of the Hero by 2 when worn."},{"code":"I020","name":"Goliath Helm","slots":[3,7],"effect":"Increases the Strength of the Hero by 6 and boosts the armor of the Hero by 5."},{"code":"I01Z","name":"Dark Helm","slots":[4,5],"effect":"Increases armor of the Hero by 3. Also reduces spell damage dealt to the hero by 30%."},{"code":"I01Y","name":"Mask of Honor","slots":[1,10],"effect":"Increases the armor of the Hero by 3 and adds 2 points to Strength, Intelligence and Agility."},{"code":"I01J","name":"Ice Helm","slots":[8,9],"effect":"This helm is so cold that enemies around the Hero take 15 damage per second."},{"code":"I01U","name":"Meteor Helm","slots":[6,7],"effect":"Creates a magic shield that protects from spells for 15 seconds."},{"code":"I01K","name":"Runed Mask","slots":[4,8],"effect":"Increases the armor of the Hero by 2. Also grants a 50% faster mana regeneration."},{"code":"I021","name":"Crown of the Dead","slots":[2,5],"effect":"Increases the armor of the Hero by 4. Also increases the movement speed and adds hit point regeneration to friendly nearby units."},{"code":"I01L","name":"Wooden Mask","slots":[3,6],"effect":"Increases the Intelligence of the Hero by 3."},{"code":"I022","name":"Elven Crown","slots":[9,10],"effect":"Increases Strength, Intelligence and Agility by 2."}]},{"id":"weapons","name":"Weapons","base":{"code":"I00E","name":"Unprocessed Weapon"},"recipes":[{"code":"I00V","name":"Holy Hammer","slots":[2,4],"effect":"Increases the attack damage of the Hero by 10 and grants a 15% chance to stun an opponent and deal 25 bonus damage to it. Also calls down a Holy Light that can heal a friendly unit over 400 hit points, or damage an undead enemy unit for 200."},{"code":"I00W","name":"Sledge Hammer","slots":[1,5],"effect":"Increases the attack damage by 10."},{"code":"I00Q","name":"Elven Spear","slots":[1,3],"effect":"Increases the attack damage by 5."},{"code":"I00Y","name":"Venom Spear","slots":[2,9],"effect":"Adds 5 bonus damage to the attack of a Hero when carried. The Hero's attacks also become ranged when attacking air and poison enemy units for 10 seconds."},{"code":"I00T","name":"Silver Glaive","slots":[3,8],"effect":"Increases the attack speed of the Hero."},{"code":"I00U","name":"Lightning Sword","slots":[4,10],"effect":"Adds 5 bonus damage to the attack of a Hero when carried. The Hero's attacks also become ranged when attacking air, and have a chance to dispel magic and slow the movement speed of the enemy for 3 seconds. Deals 150 bonus damage to summoned units."},{"code":"I00P","name":"Slashing Trident","slots":[5,7],"effect":"Increases the attack damage of the Hero by 10 and gives a 20% chance to do 2 times normal damage."},{"code":"I00S","name":"Heavy Axe of Maiming","slots":[6,8],"effect":"Adds 18 bonus damage to the attack of a Hero when carried. The Hero's attacks also become ranged when attacking air, and have a chance to slow a target enemy unit's movement speed by 60% and attack rate by 25% for 20 seconds."},{"code":"I00X","name":"Mining Pick","slots":[6,9],"effect":"Increases the damage of the Hero by 5."},{"code":"I00R","name":"Raven Sword","slots":[7,10],"effect":"Adds 20 bonus fire damage to the attack of a Hero when carried. The Hero's attacks also become ranged when attacking air and do splash damage to nearby enemy units."}]},{"id":"shields","name":"Shields","base":{"code":"I00D","name":"Unprocessed Shield"},"recipes":[{"code":"I01G","name":"Black Shield","slots":[1,4],"effect":"Increases the armor of the Hero by 8. Also reduces spell damage dealt to the Hero by 50%."},{"code":"I01B","name":"Edged Shield","slots":[1,8],"effect":"Increases the armor of the Hero by 4 and adds 10 bonus damage to the Hero."},{"code":"I01A","name":"Golden Roundshield","slots":[2,6],"effect":"Increases the armor of the Hero by 4. Also reduces piercing damage dealt to the Hero by 30%."},{"code":"I01I","name":"Iron Shield","slots":[2,7],"effect":"Increases the armor of the Hero by 4 and boosts Strength, Agility and Intelligence by 2."},{"code":"I01C","name":"Raven Shield","slots":[3,9],"effect":"Boosts the armor of the Hero by 8 and increases the damage of nearby friendly units by 20%."},{"code":"I01H","name":"Flawed Shield","slots":[4,7],"effect":"Increases the armor of the Hero by 2."},{"code":"I01E","name":"Steel Roundshield","slots":[5,6],"effect":"Increases armor of the Hero by 2. Also regenerates 2 hit points per second of the Hero."},{"code":"I00O","name":"Gladiator Shield","slots":[5,9],"effect":"Increases the armor of all friendly units in an area around your Hero by 2 for a limited time."},{"code":"I019","name":"Unholy Shield","slots":[8,10],"effect":"Increases the armor of the Hero by 4. Also increases the movement speed and adds hit point regeneration to friendly nearby units."},{"code":"I01F","name":"Wooden Shield","slots":[3,10],"effect":"Increases armor of the Hero by 1."}]},{"id":"staffs","name":"Staffs","base":{"code":"I00J","name":"Unprocessed Staff"},"recipes":[{"code":"I017","name":"Blue Staff","slots":[1,7],"effect":"Increases the mana of the Hero by 100 and boosts the mana regeneration rate by 50%."},{"code":"I014","name":"Brilliance Staff","slots":[1,9],"effect":"Increases the Intelligence by 6. Also grants the Hero and friendly nearby units a bonus to mana regeneration."},{"code":"I018","name":"Gipsy Wand","slots":[2,3],"effect":"Increases the Strength and Agility of a Hero by 3."},{"code":"I016","name":"Scepter of Harmony","slots":[2,8],"effect":"Dispels all magical effects in a target area. Deals 150 damage to summoned units."},{"code":"I010","name":"Staff of Fire","slots":[3,5],"effect":"This staff can conjure a pillar of intense flames, dealing 110 damage per second for 3 seconds to every ground unit at that area. Also increases the intelligence of the Hero by 4."},{"code":"I012","name":"Staff of Healing","slots":[4,6],"effect":"Increases the Hero's hit points by 150. Heals 250 hit points of the Hero when used."},{"code":"I013","name":"Troll Scepter","slots":[4,9],"effect":"Increases the agility of a Hero by 3."},{"code":"I015","name":"Undead Staff","slots":[5,10],"effect":"Creates two Skeleton Warriors from a corpse."},{"code":"I00Z","name":"Star Wand","slots":[6,10],"effect":"Shoots a shockwave of stars that ripples outward, causing 200 damage to land units in a line. Also increases Strength, Intelligence and Agility of the Hero by 2."},{"code":"I011","name":"Druid Wand","slots":[7,8],"effect":"Increases the Intelligence of the Hero by 6."}]},{"id":"gloves","name":"Gloves","base":{"code":"I02C","name":"Unprocessed Gloves"},"recipes":[{"code":"I02G","name":"Bear Gloves","slots":[1,6],"effect":"Increases Strength by 3, casts the strength of the bears when used, increasing the damage of the party by 25% for 45 seconds."},{"code":"I02D","name":"Gloves of the Demon Hunter","slots":[2,10],"effect":"Causes attacks against the wearer to miss 15% of the time. Also sends a bolt of negative energy that burns up to 100 points of a target enemy unit's mana. The mana combusts, dealing damage equal to the amount of mana burned."},{"code":"I02I","name":"Gauntles of Bashing","slots":[3,4],"effect":"Increases the Strength of the Hero by 3. Also grants a 15% chance to stun an opponent and deal 25 bonus damage to it."},{"code":"I02E","name":"Gloves of Ignition","slots":[4,10],"effect":"Engulfs the Hero in fire which deals 15 damage per second to nearby enemy land units."},{"code":"I02F","name":"Gloves of Nature","slots":[5,8],"effect":"Increases Agility of the Hero by 3. Causes roots to burst from the ground, immobilizing a target enemy unit for 10 seconds, and dealing 10 damage per second."},{"code":"I02M","name":"Hands of Frost","slots":[7,9],"effect":"Adds 6 bonus cold damage to the attack of a Hero when carried. The Hero's attacks also become ranged when attacking air and slow the movement speed and attack rate of the enemy for 3 seconds."},{"code":"I02K","name":"Magic Gauntlets","slots":[6,4],"effect":"Increases Strength, Agility and Intelligence by 5 when worn."},{"code":"I02L","name":"Paladin Gloves","slots":[1,2],"effect":"Increases armor of nearby friendly units by 2."},{"code":"I02H","name":"Runed Gauntlets","slots":[3,5],"effect":"Increases Strength, Agility and Intelligence of the Hero by 5."},{"code":"I02J","name":"Searing Gloves","slots":[7,9],"effect":"Adds 5 bonus fire damage to the attack of a Hero when carried. The Hero's attacks also become ranged when attacking air and do splash damage to nearby enemy units."}]},{"id":"armor","name":"Armor","base":{"code":"I00I","name":"Unprocessed Armor"},"recipes":[{"code":"I01S","name":"Combat Suit","slots":[3,2],"effect":"Grants an armor bonus of 2. Also increases the Agility of the Hero by 3."},{"code":"I01T","name":"Scale Armor","slots":[4,1],"effect":"Boosts the armor of the Hero by 3 and increases the Agility by 6."},{"code":"I01Q","name":"Full Plate Armor","slots":[5,4],"effect":"Increases the armor of the Hero by 4. Also protects from negative spells once every 60 seconds."},{"code":"I01W","name":"Golden Chainmail","slots":[7,6],"effect":"Boosts armor of the Hero by 3. Also increases movement speed by 10% and attack rate by 5% of nearby friendly units."},{"code":"I01R","name":"Magmascale Armor","slots":[8,1],"effect":"Increases the armor of the Hero by 2. Also decreases the armor of nearby enemy units by 2."},{"code":"I01N","name":"Mage Robe","slots":[8,6],"effect":"Increases Intelligence of the Hero by 3. Also grants the Hero and friendly nearby units a bonus to mana regeneration."},{"code":"I01V","name":"Scale Mail","slots":[9,3],"effect":"Increases the armor of the Hero by 2."},{"code":"I01O","name":"Moonstone Armor","slots":[10,2],"effect":"Increases the armor of the Hero by 5."},{"code":"I01P","name":"Vampire Cape","slots":[10,5],"effect":"Grants a melee Hero and friendly nearby melee units life stealing attacks which take 15% of the damage they deal and convert it into life."},{"code":"I01M","name":"Wooden Armor","slots":[5,7],"effect":"Increases armor of the Hero by 2."}]}],"books":[{"code":"I04B","name":"Wooden Dreams","cost":1000,"pages":[{"page":1,"title":"The Lumberjack Mask","slots":[3,6],"category":"helmets","result":"I01L"},{"page":2,"title":"The Bark Shield","slots":[3,10],"category":"shields","result":"I01F"},{"page":3,"title":"Sexy Armor - made of wood...","slots":[5,7],"category":"armor","result":"I01M"}]},{"code":"I04C","name":"Blood Bowl","cost":1500,"pages":[{"page":1,"title":"The Shield of Harmony","slots":[3,9],"category":"shields","result":"I01C"},{"page":2,"title":"Bash 'n Heal Hammer","slots":[2,4],"category":"weapons","result":"I00V"},{"page":3,"title":"Wand of Destruction","slots":[6,10],"category":"staffs","result":"I00Z"}]}]};
+
+const KEY = 'magnador-forge-v1';
+const ingName = Object.fromEntries(D.ingredients.map((i) => [i.code, i.name]));
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const $ = (id) => document.getElementById(id);
+
+const state = { seed: null, source: '', owned: [], forged: [], cat: 'all', q: '', onlyReady: false, hideForged: false };
+try {
+  const saved = JSON.parse(localStorage.getItem(KEY) || 'null');
+  if (saved) Object.assign(state, saved, { q: '' });
+} catch (e) { /* storage unavailable */ }
+function save() {
+  try {
+    const { seed, source, owned, forged, cat, onlyReady, hideForged } = state;
+    localStorage.setItem(KEY, JSON.stringify({ seed, source, owned, forged, cat, onlyReady, hideForged }));
+  } catch (e) { /* storage unavailable */ }
+}
+
+const ingAt = (seed, slot) => D.seeds[seed][slot - 1];
+const allRecipes = D.categories.flatMap((c) => c.recipes.map((r, i) => ({ ...r, cat: c, idx: i })));
+
+// Recipes that share a slot pair within one equipment type (map bug).
+const twins = {};
+for (const c of D.categories) {
+  const seen = {};
+  c.recipes.forEach((r) => {
+    const k = [...r.slots].sort((x, y) => x - y).join('+');
+    if (seen[k]) { twins[seen[k].code] = { other: r, first: true }; twins[r.code] = { other: seen[k], first: false }; }
+    else seen[k] = r;
+  });
+}
+
+function setSeed(seed, source) {
+  state.seed = seed;
+  state.source = source || '';
+  save();
+  renderSeed();
+  renderLedger();
+}
+
+/* ---------- Seed panel ---------- */
+function renderSeed() {
+  const s = state.seed;
+  $('seed-big').textContent = s == null ? '–' : s;
+  const pill = $('seed-pill');
+  if (s == null) { pill.className = 'pill warn'; pill.textContent = 'Not set'; }
+  else if (state.source) { pill.className = 'pill ok'; pill.textContent = 'Confirmed'; }
+  else { pill.className = 'pill muted'; pill.textContent = 'Picked by hand'; }
+  $('seed-source').textContent = s == null
+    ? 'Pick it below if you know it, or work it out from a Cookbook or an item you\'ve already forged.'
+    : state.source ? `Worked out from ${state.source}.` : 'Set by hand. Confirm it with a Cookbook page or an item you forged if you\'re unsure.';
+  [...$('seeds').children].forEach((b, i) => b.setAttribute('aria-pressed', String(i === s)));
+  const ready = $('only-ready');
+  ready.disabled = s == null;
+  $('ready-label').setAttribute('aria-disabled', String(s == null));
+  $('ready-label').title = s == null ? 'Set your seed first' : '';
+}
+
+function buildSeedButtons() {
+  const wrap = $('seeds');
+  for (let i = 0; i <= 9; i++) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.textContent = i;
+    b.setAttribute('aria-label', `Seed ${i}`);
+    b.addEventListener('click', () => setSeed(i, ''));
+    wrap.appendChild(b);
+  }
+}
+
+function ingredientOptions(placeholder) {
+  return `<option value="">${esc(placeholder)}</option>` +
+    D.ingredients.map((i) => `<option value="${i.code}">${esc(i.name)}</option>`).join('');
+}
+
+function buildCookbookFinder() {
+  $('cb-page').innerHTML = '<option value="">Choose a page…</option>' + D.books.map((b, bi) =>
+    `<optgroup label="${esc(b.name)} (${b.cost} gold)">` +
+    b.pages.map((p, pi) => `<option value="${bi}:${pi}">Page ${p.page} · ${esc(p.title)}</option>`).join('') +
+    '</optgroup>').join('');
+  $('cb-first').innerHTML = ingredientOptions('Choose an ingredient…');
+  const run = () => {
+    const out = $('cb-answer');
+    out.className = 'answer';
+    const pv = $('cb-page').value, first = $('cb-first').value;
+    if (!pv || !first) { out.textContent = ''; return; }
+    const [bi, pi] = pv.split(':').map(Number);
+    const book = D.books[bi], page = book.pages[pi];
+    const seed = D.seeds.findIndex((row) => row[page.slots[0] - 1] === first);
+    const second = ingName[ingAt(seed, page.slots[1])];
+    out.innerHTML = `This game is <strong>seed ${seed}</strong>. The page should also list ${esc(second)} as the second ingredient.`;
+    setSeed(seed, `${book.name}, page ${page.page}`);
+  };
+  $('cb-page').addEventListener('change', run);
+  $('cb-first').addEventListener('change', run);
+}
+
+function buildForgedFinder() {
+  $('fi-item').innerHTML = '<option value="">Choose an item…</option>' + D.categories.map((c, ci) =>
+    `<optgroup label="${esc(c.name)}">` +
+    c.recipes.map((r, ri) => `<option value="${ci}:${ri}">${esc(r.name)}</option>`).join('') +
+    '</optgroup>').join('');
+  $('fi-a').innerHTML = ingredientOptions('Choose an ingredient…');
+  $('fi-b').innerHTML = ingredientOptions('Choose an ingredient…');
+  const run = () => {
+    const out = $('fi-answer');
+    out.className = 'answer';
+    const iv = $('fi-item').value, x = $('fi-a').value, y = $('fi-b').value;
+    if (!iv || !x || !y) { out.textContent = ''; return; }
+    if (x === y) { out.className = 'answer bad'; out.textContent = 'Every recipe uses two different ingredients. Check ingredient 2.'; return; }
+    const [ci, ri] = iv.split(':').map(Number);
+    const r = D.categories[ci].recipes[ri];
+    const matches = [];
+    for (let s = 0; s <= 9; s++) {
+      const pair = [ingAt(s, r.slots[0]), ingAt(s, r.slots[1])];
+      if (pair.includes(x) && pair.includes(y)) matches.push(s);
+    }
+    if (!matches.length) {
+      out.className = 'answer bad';
+      out.textContent = `No seed makes ${r.name} from those two ingredients. Check the item and both ingredients.`;
+    } else if (matches.length === 1) {
+      out.innerHTML = `This game is <strong>seed ${matches[0]}</strong>.`;
+      setSeed(matches[0], `your ${r.name}`);
+    } else {
+      out.innerHTML = `Seeds ${matches.join(' and ')} both make ${esc(r.name)} from that pair. Check one more item or a Cookbook page to tell them apart, or pick one:` +
+        `<span class="pick">${matches.map((s) => `<button type="button" class="btn" data-seed="${s}">Seed ${s}</button>`).join('')}</span>`;
+      out.querySelectorAll('button[data-seed]').forEach((b) => b.addEventListener('click', () => setSeed(+b.dataset.seed, '')));
+    }
+  };
+  ['fi-item', 'fi-a', 'fi-b'].forEach((id) => $(id).addEventListener('change', run));
+}
+
+/* ---------- Filters ---------- */
+function buildFilters() {
+  const tabs = [{ id: 'all', name: 'All' }, ...D.categories.map((c) => ({ id: c.id, name: c.name }))];
+  $('tabs').innerHTML = tabs.map((t) => `<button type="button" class="tab" data-cat="${t.id}">${esc(t.name)}</button>`).join('');
+  $('tabs').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-cat]');
+    if (!b) return;
+    state.cat = b.dataset.cat; save(); renderFilters(); renderLedger();
+  });
+  $('have').innerHTML = D.ingredients.map((i) => `<button type="button" class="chip-btn" data-ing="${i.code}">${esc(i.name)}</button>`).join('');
+  $('have').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-ing]');
+    if (!b) return;
+    const c = b.dataset.ing;
+    state.owned = state.owned.includes(c) ? state.owned.filter((x) => x !== c) : [...state.owned, c];
+    save(); renderFilters(); renderLedger();
+  });
+  $('only-ready').addEventListener('change', (e) => { state.onlyReady = e.target.checked; save(); renderLedger(); });
+  $('hide-forged').addEventListener('change', (e) => { state.hideForged = e.target.checked; save(); renderLedger(); });
+  $('q').addEventListener('input', (e) => { state.q = e.target.value; renderLedger(); });
+}
+
+function renderFilters() {
+  $('tabs').querySelectorAll('[data-cat]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.cat === state.cat)));
+  $('have').querySelectorAll('[data-ing]').forEach((b) => b.setAttribute('aria-pressed', String(state.owned.includes(b.dataset.ing))));
+  $('only-ready').checked = state.onlyReady;
+  $('hide-forged').checked = state.hideForged;
+}
+
+/* ---------- Ledger ---------- */
+function ingredientsFor(r) {
+  return state.seed == null ? null : r.slots.map((s) => ingAt(state.seed, s));
+}
+function isReady(r) {
+  const ings = ingredientsFor(r);
+  return !!ings && ings.every((c) => state.owned.includes(c)) && !state.forged.includes(r.code);
+}
+
+function renderLedger() {
+  const focusedId = document.activeElement && document.activeElement.id;
+  const q = state.q.trim().toLowerCase();
+  let shown = 0;
+  const html = D.categories.filter((c) => state.cat === 'all' || state.cat === c.id).map((c) => {
+    const forgedCount = c.recipes.filter((r) => state.forged.includes(r.code)).length;
+    const rows = c.recipes.filter((r) => {
+      if (state.hideForged && state.forged.includes(r.code)) return false;
+      if (state.onlyReady && state.seed != null && !isReady(r)) return false;
+      if (q) {
+        const ings = ingredientsFor(r) || [];
+        const hay = [r.name, r.effect, c.base.name, ...ings.map((x) => ingName[x])].join(' ').toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      return true;
+    }).map((r) => {
+      shown++;
+      const ings = ingredientsFor(r);
+      const forged = state.forged.includes(r.code);
+      const ready = isReady(r);
+      const chips = ings
+        ? ings.map((x) => `<span class="ing${state.owned.includes(x) ? ' owned' : ''}">${esc(ingName[x])}</span>`)
+        : ['<span class="ing unknown" title="Set your seed">?</span>', '<span class="ing unknown" title="Set your seed">?</span>'];
+      const twin = twins[r.code];
+      const note = twin ? `<p class="note">Same ingredients as ${esc(twin.other.name)}. ${twin.first ? 'The first forge with this pair gives this item.' : 'You get this on the second forge with this pair.'}</p>` : '';
+      return `<li class="recipe${forged ? ' is-forged' : ''}">
+        <span class="chk"><input type="checkbox" id="f-${r.code}" data-code="${r.code}"${forged ? ' checked' : ''} aria-label="Forged ${esc(r.name)}"></span>
+        <div class="item"><span class="name">${esc(r.name)}</span><code>${r.code}</code>${ready ? '<span class="pill ok">Ready</span>' : ''}${forged ? '<span class="pill muted">Forged</span>' : ''}</div>
+        <div class="mix"><span class="ing base">${esc(c.base.name)}</span><span class="plus">+</span>${chips[0]}<span class="plus">+</span>${chips[1]}</div>
+        <p class="fx">${esc(r.effect)}</p>${note}
+      </li>`;
+    });
+    if (!rows.length) return '';
+    return `<section class="cat" aria-labelledby="h-${c.id}">
+      <div class="cat-head"><h2 id="h-${c.id}">${esc(c.name)}</h2><span class="meta">Base: <b>${esc(c.base.name)}</b> · ${forgedCount} of ${c.recipes.length} forged</span></div>
+      <ul class="recipes">${rows.join('')}</ul>
+    </section>`;
+  }).join('');
+
+  $('ledger').innerHTML = html || `<p class="empty">No recipes match. Clear the search${state.onlyReady ? ', turn off “Only what I can make now”' : ''}${state.hideForged ? ' or show forged items' : ''}.</p>`;
+  const total = state.cat === 'all' ? allRecipes.length : D.categories.find((c) => c.id === state.cat).recipes.length;
+  $('summary').textContent = `Showing ${shown} of ${total} recipes · ${state.forged.length} forged this game` +
+    (state.seed == null ? ' · ingredients appear once you set your seed' : '');
+  if (focusedId && focusedId.startsWith('f-') && $(focusedId)) $(focusedId).focus();
+}
+
+$('ledger').addEventListener('change', (e) => {
+  const c = e.target.dataset && e.target.dataset.code;
+  if (!c) return;
+  state.forged = e.target.checked ? [...new Set([...state.forged, c])] : state.forged.filter((x) => x !== c);
+  save(); renderLedger();
+});
+
+/* ---------- Reset ---------- */
+let armTimer;
+$('reset').addEventListener('click', (e) => {
+  const b = e.currentTarget;
+  if (b.dataset.armed !== 'true') {
+    b.dataset.armed = 'true';
+    b.textContent = 'Clear seed, ingredients and forged items?';
+    clearTimeout(armTimer);
+    armTimer = setTimeout(() => { b.dataset.armed = 'false'; b.textContent = 'Start a new game'; }, 4000);
+    return;
+  }
+  clearTimeout(armTimer);
+  b.dataset.armed = 'false';
+  b.textContent = 'Start a new game';
+  Object.assign(state, { seed: null, source: '', owned: [], forged: [], onlyReady: false });
+  ['cb-page', 'cb-first', 'fi-item', 'fi-a', 'fi-b'].forEach((id) => { $(id).value = ''; });
+  $('cb-answer').textContent = ''; $('fi-answer').textContent = '';
+  save(); renderSeed(); renderFilters(); renderLedger();
+});
+
+buildSeedButtons();
+buildCookbookFinder();
+buildForgedFinder();
+buildFilters();
+renderSeed();
+renderFilters();
+renderLedger();
+</script>
+</body>
+</html>
